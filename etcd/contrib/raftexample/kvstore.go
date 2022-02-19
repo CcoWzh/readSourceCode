@@ -80,8 +80,10 @@ func (s *kvstore) Propose(k string, v string) {
 	s.proposeC <- buf.String()
 }
 
+// 从commitC通道中读取数据
 func (s *kvstore) readCommits(commitC <-chan *commit, errorC <-chan error) {
 	for commit := range commitC {
+		// 如果commitC是空，则检测从快照中加载数据
 		if commit == nil {
 			// signaled to load snapshot
 			snapshot, err := s.loadSnapshot()
@@ -96,7 +98,7 @@ func (s *kvstore) readCommits(commitC <-chan *commit, errorC <-chan error) {
 			}
 			continue
 		}
-
+		// 从commitC中读取要存储的键值对
 		for _, data := range commit.data {
 			var dataKv kv
 			dec := gob.NewDecoder(bytes.NewBufferString(data))
@@ -109,6 +111,7 @@ func (s *kvstore) readCommits(commitC <-chan *commit, errorC <-chan error) {
 		}
 		close(commit.applyDoneC)
 	}
+	// 如果节点宕机或者出错，则报错
 	if err, ok := <-errorC; ok {
 		log.Fatal(err)
 	}
@@ -135,6 +138,7 @@ func (s *kvstore) loadSnapshot() (*raftpb.Snapshot, error) {
 // 从快照中恢复数据
 func (s *kvstore) recoverFromSnapshot(snapshot []byte) error {
 	var store map[string]string
+	// 反序列化数据
 	if err := json.Unmarshal(snapshot, &store); err != nil {
 		return err
 	}

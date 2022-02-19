@@ -4,4 +4,4 @@
 
 目前，阅读的源码主要有：
 
-- [etcd-io/etcd](https://github.com/etcd-io/etcd)，etcd，分布式键值对数据库
+- [etcd-io/etcd](https://github.com/etcd-io/etcd)，`etcd`，分布式键值对数据库

@@ -44,19 +44,30 @@ type commit struct {
 
 // A key-value stream backed by raft
 type raftNode struct {
+	// 当收到 HTTP PUT 请求时，httpKVAPI 会将请求中的键值对通过 proposeC 通道传递给 raftNode 实例进行处理
 	proposeC    <-chan string            // proposed messages (k,v)
+	// 当收到 POST 请求时，httpKVAPI 会通过 confChangeC 通道将修改的节点 ID 传递给 raftNode 实例进行处理
 	confChangeC <-chan raftpb.ConfChange // proposed cluster config changes
+	// kvstore收到commitC后会保存该数据
 	commitC     chan<- *commit           // entries committed to log (k,v)
+	// 当 etcd-raft 模块关闭或是出现异常时，会通过 errorC 通道将该信息通知上层模块
 	errorC      chan<- error             // errors from raft session
 
+	// 当前节点的id
 	id          int      // client ID for raft session
+	// 当前集群所有节点的地址，当前节点会通过该字段中保存的地址向集群中的其他节点发送消息
 	peers       []string // raft peer URLs
+	// 当前节点是否为后续加入到一个集群的节点
 	join        bool     // node is joining an existing cluster
+	// 存当 WAL 日志文件的地址
 	waldir      string   // path to WAL directory
+	// 存放快照的目录
 	snapdir     string   // path to snapshot directory
 	getSnapshot func() ([]byte, error)
 
+	// 用于记录当前的集群状态
 	confState     raftpb.ConfState
+	// 保存当前快照的相关元素，即快照所包含的最后一条 Entry 记录的索引值
 	snapshotIndex uint64
 	appliedIndex  uint64
 
